@@ -1,51 +1,51 @@
 <!DOCTYPE html>
 
 <html lang="en">
-    <head>
-        <title>Image color counter</title>
-        <meta charset="UTF-8" />
+	<head>
+		<title>Image color counter</title>
+		<meta charset="UTF-8" />
 
-        <style>
+		<style>
 noscript {
-    font-weight: 800;
-    font-size: 3em;    
+	font-weight: 800;
+	font-size: 3em;	
 }
 
 img {
-    display: block;
-    width: 12em;
-    height: 12em;
-    object-fit: scale-down;
+	display: block;
+	width: 12em;
+	height: 12em;
+	object-fit: scale-down;
 }
 
 .explain {
-    font-style: italic;
+	font-style: italic;
 }
 
 .name,
 .out {
-    font-weight: 800;
+	font-weight: 800;
 }
-        </style>
-    </head>
+		</style>
+	</head>
 
-    <body>
-        <noscript><p>JavaScript please :&gt;</p></noscript>
-        <p class="explain">Counts the number of unique 8-bit per channel colors in an image</p>
+	<body>
+		<noscript><p>JavaScript please :&gt;</p></noscript>
+		<p class="explain">Counts the number of unique 8-bit per channel colors in an image</p>
 
-        <hr />
+		<hr />
 
-        <h2>In</h2>
-        <p><input type="file" /></p>
-        <p><img src="" data-filename="" alt="Preview image here" /></p>
+		<h2>In</h2>
+		<p><input type="file" /></p>
+		<p><img src="" data-filename="" alt="Preview image here" /></p>
 
-        <hr />
+		<hr />
 
-        <h2>Out</h2>
-        <p>Filename: <span class="name">-</span></p>
-        <p>Color count: <span class="out">0</span></p>
+		<h2>Out</h2>
+		<p>Filename: <span class="name">-</span></p>
+		<p>Color count: <span class="out">0</span></p>
 
-        <script type="module">
+		<script type="module">
 const input = document.querySelector("input");
 const image = document.querySelector("img");
 const nameSpan = document.querySelector(".name");
@@ -57,65 +57,65 @@ let errorListener;
 const worker = new Worker("./worker.js", {type: "module"});
 
 worker.addEventListener("message", event => {
-    // console.log(`done "${input.files[0].name}": ${event.data}`);
+	// console.log(`done "${input.files[0].name}": ${event.data}`);
 
-    out.textContent = event.data;
+	out.textContent = event.data;
 
-    resetInputAndListeners();
+	resetInputAndListeners();
 });
 
 input.addEventListener("input", () => {
-    if (!input.files || !input.files[0]) return;
+	if (!input.files || !input.files[0]) return;
 
-    input.disabled = true;
+	input.disabled = true;
 
-    const reader = new FileReader();
+	const reader = new FileReader();
 
-    reader.addEventListener("load", loadEvent => {
-        image.addEventListener("load", loadListener = async () => {
-            // Avoid most wrong files being processed
-            if (image.getAttribute("data-filename") !== input.files[0].name) return;
+	reader.addEventListener("load", loadEvent => {
+		image.addEventListener("load", loadListener = async () => {
+			// Avoid most wrong files being processed
+			if (image.getAttribute("data-filename") !== input.files[0].name) return;
 
-            worker.postMessage(prepareImageData(image));
-        }, {once: true});
+			worker.postMessage(prepareImageData(image));
+		}, {once: true});
 
-        image.addEventListener("error", errorListener = () => {
-            if (image.getAttribute("data-filename") !== input.files[0].name) return;
+		image.addEventListener("error", errorListener = () => {
+			if (image.getAttribute("data-filename") !== input.files[0].name) return;
 
-            out.textContent = "Bad image :(";
+			out.textContent = "Bad image :(";
 
-            resetInputAndListeners();
-        }, {once: true});
+			resetInputAndListeners();
+		}, {once: true});
 
-        image.src = loadEvent.target.result;
-    });
+		image.src = loadEvent.target.result;
+	});
 
-    image.setAttribute("data-filename", input.files[0].name);
+	image.setAttribute("data-filename", input.files[0].name);
 
-    nameSpan.textContent = input.files[0].name;
-    out.textContent = "…";
+	nameSpan.textContent = input.files[0].name;
+	out.textContent = "…";
 
-    reader.readAsDataURL(input.files[0]);
+	reader.readAsDataURL(input.files[0]);
 });
 
 function prepareImageData(image) {
-    const canvas = document.createElement("canvas");
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
+	const canvas = document.createElement("canvas");
+	canvas.width = image.naturalWidth;
+	canvas.height = image.naturalHeight;
 
-    const context = canvas.getContext("2d");
-    context.drawImage(image, 0, 0);
+	const context = canvas.getContext("2d");
+	context.drawImage(image, 0, 0);
 
-    return context.getImageData(0, 0, canvas.width, canvas.height).data;
+	return context.getImageData(0, 0, canvas.width, canvas.height).data;
 }
 
 function resetInputAndListeners() {
-    input.value = "";
-    input.disabled = false;
+	input.value = "";
+	input.disabled = false;
 
-    image.removeEventListener("load", loadListener);
-    image.removeEventListener("error", errorListener);
+	image.removeEventListener("load", loadListener);
+	image.removeEventListener("error", errorListener);
 }
-        </script>
-    </body>
+		</script>
+	</body>
 </html>
