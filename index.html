@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>Image color counter</title>
+        <meta charset="UTF-8" />
+
+        <style>
+noscript {
+    font-weight: 800;
+    font-size: 3em;    
+}
+
+img {
+    display: block;
+    width: 12em;
+    height: 12em;
+    object-fit: scale-down;
+}
+
+.explain {
+    font-style: italic;
+}
+
+.name,
+.out {
+    font-weight: 800;
+}
+        </style>
+    </head>
+
+    <body>
+        <noscript><p>JavaScript please :&gt;</p></noscript>
+        <p class="explain">Counts the number of unique 8-bit per channel colors in an image</p>
+
+        <hr />
+
+        <h2>In</h2>
+        <p><input type="file" /></p>
+        <p><img src="" data-filename="" alt="Preview image here" /></p>
+
+        <hr />
+
+        <h2>Out</h2>
+        <p>Filename: <span class="name">-</span></p>
+        <p>Color count: <span class="out">0</span></p>
+
+        <script type="module">
+const input = document.querySelector("input");
+const image = document.querySelector("img");
+const nameSpan = document.querySelector(".name");
+const out = document.querySelector(".out");
+
+let loadListener;
+let errorListener;
+
+const worker = new Worker("./worker.js", {type: "module"});
+
+worker.addEventListener("message", event => {
+    // console.log(`done "${input.files[0].name}": ${event.data}`);
+
+    out.textContent = event.data;
+
+    resetInputAndListeners();
+});
+
+input.addEventListener("input", () => {
+    if (!input.files || !input.files[0]) return;
+
+    input.disabled = true;
+
+    const reader = new FileReader();
+
+    reader.addEventListener("load", loadEvent => {
+        image.addEventListener("load", loadListener = async () => {
+            // Avoid most wrong files being processed
+            if (image.getAttribute("data-filename") !== input.files[0].name) return;
+
+            worker.postMessage(prepareImageData(image));
+        }, {once: true});
+
+        image.addEventListener("error", errorListener = () => {
+            if (image.getAttribute("data-filename") !== input.files[0].name) return;
+
+            out.textContent = "Bad image :(";
+
+            resetInputAndListeners();
+        }, {once: true});
+
+        image.src = loadEvent.target.result;
+    });
+
+    image.setAttribute("data-filename", input.files[0].name);
+
+    nameSpan.textContent = input.files[0].name;
+    out.textContent = "…";
+
+    reader.readAsDataURL(input.files[0]);
+});
+
+function prepareImageData(image) {
+
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0);
+
+    return context.getImageData(0, 0, canvas.width, canvas.height).data;
+
+}
+
+function resetInputAndListeners() {
+    input.value = "";
+    input.disabled = false;
+
+    image.removeEventListener("load", loadListener);
+    image.removeEventListener("error", errorListener);
+}
+        </script>
+    </body>
+</html>
