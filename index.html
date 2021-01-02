@@ -99,7 +99,6 @@ input.addEventListener("input", () => {
 });
 
 function prepareImageData(image) {
-
     const canvas = document.createElement("canvas");
     canvas.width = image.naturalWidth;
     canvas.height = image.naturalHeight;
@@ -108,7 +107,6 @@ function prepareImageData(image) {
     context.drawImage(image, 0, 0);
 
     return context.getImageData(0, 0, canvas.width, canvas.height).data;
-
 }
 
 function resetInputAndListeners() {
